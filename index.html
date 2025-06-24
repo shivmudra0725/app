@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QR Attendance with Address (Free OSM)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    button[disabled] { opacity: .5; }
+  </style>
+</head>
+<body>
+  <h2>Mark Attendance</h2>
+  <form id="rollForm">
+    <label for="roll">Roll No:</label>
+    <select id="roll" required>
+      <option value="">--Select Roll No--</option>
+    </select><br><br>
+    <button type="submit">Mark Present</button>
+  </form>
+
+<script>
+(function () {
+  // 1. Generate dropdown options J1..J600
+  const dropdown = document.getElementById("roll");
+  for (let i = 1; i <= 600; i++) {
+    const roll = `J${i}`;
+    const opt = document.createElement("option");
+    opt.value = roll;
+    opt.textContent = roll;
+    dropdown.appendChild(opt);
+  }
+
+  // 2. Replace these placeholders with your Form details
+  const formBase = "https://docs.google.com/forms/d/e/16Wer3viv0t4XvOWvUPvXRWfsBc17r8Dz6NUinQuLpac/viewform?usp=pp_url";
+  const entryRoll = "entry.846968130";      // Roll No field
+  const entryLocation = "entry.718692023";   // Lat,Lon field
+  const entryAddress = "entry.1049514207";// Address field
+
+  // 3. Submit handler
+  document.getElementById("rollForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const roll = dropdown.value;
+    if (!roll) { alert("Please select your roll number."); return; }
+
+    if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const location = `${lat},${lng}`;
+
+      // Reverse geocode using free OpenStreetMap Nominatim
+      let address = "Unknown";
+      try {
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+          { headers: { "User-Agent": "qr-attendance-demo/1.0" } }
+        );
+        const data = await resp.json();
+        address = data.display_name || "Unknown";
+      } catch (err) {
+        console.error(err);
+      }
+
+      // Build pre‑filled Google Form URL
+      const url =
+        `${formBase}&${entryRoll}=${encodeURIComponent(roll)}` +
+        `&${entryLocation}=${encodeURIComponent(location)}` +
+        `&${entryAddress}=${encodeURIComponent(address)}`;
+
+      // Open prefilled form in a new tab
+      window.open(url, "_blank");
+    },
+    (err) => {
+      alert("Location error: " + err.message);
+    },
+    { enableHighAccuracy: true, timeout: 10000 });
+  });
+})();
+</script>
+</body>
+</html>

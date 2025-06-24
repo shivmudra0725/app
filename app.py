@@ -7,7 +7,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 # ----------------- Google Sheet Setup -----------------
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name(".streamlit/credentials.json", scope)
 client = gspread.authorize(creds)
 spreadsheet = client.open("Attendance Tracker")
 
